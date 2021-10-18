@@ -1,0 +1,4 @@
+.env
+oauth_client_secret.json
+aws/lambda/main
+aws/cdk/cdk.out
