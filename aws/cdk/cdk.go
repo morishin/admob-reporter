@@ -34,6 +34,7 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		panic(err)
 	}
 
+	env := envForLambdaExecution()
 	functionName := jsii.String("admob-reporter-function")
 	function := awslambda.NewFunction(stack, functionName, &awslambda.FunctionProps{
 		FunctionName: functionName,
@@ -41,13 +42,13 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 		Code:         awslambda.Code_Asset(jsii.String("../lambda")),
 		Architecture: awslambda.Architecture_X86_64(),
 		Handler:      jsii.String("main"),
-		Environment:  envForLambdaExecution(),
+		Environment:  env,
 	})
 
 	target := awseventstargets.NewLambdaFunction(function, &awseventstargets.LambdaFunctionProps{})
 	targets := []awsevents.IRuleTarget{target}
 	awsevents.NewRule(stack, jsii.String("admob-reporter-rule"), &awsevents.RuleProps{
-		Schedule: awsevents.Schedule_Expression(jsii.String("cron(0 3,15 * * ? *)")),
+		Schedule: awsevents.Schedule_Expression((*env)["CRON"]),
 		Targets:  &targets,
 	})
 
@@ -99,6 +100,7 @@ func envForLambdaExecution() *map[string]*string {
 		"ADMOB_PUBLISHER_ID",
 		"ADMOB_OAUTH2_REFRESH_TOKEN",
 		"SLACK_WEBHOOK_URL",
+		"CRON",
 	}
 
 	// Check whether all of the required environment variables are set

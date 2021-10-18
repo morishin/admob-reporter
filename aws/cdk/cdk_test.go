@@ -30,12 +30,13 @@ func TestCdkStack(t *testing.T) {
 	env := template.Get("Resources.admobreporterfunctionE6B4D67C.Properties.Environment.Variables").Map()
 	assert.True(t, strings.HasPrefix(env["ADMOB_PUBLISHER_ID"].String(), "pub-"))
 	assert.Equal(t, "admob-reporter-function", functionName)
-	assert.Equal(t, "cron(0 3,15 * * ? *)", cronExpression)
+	assert.Equal(t, "cron(0 0,12 * * ? *)", cronExpression)
 }
 
 func setUpEnv(t *testing.T) {
 	t.Setenv("ADMOB_PUBLISHER_ID", "pub-xxxxxxxxxxxxxxxxx")
 	t.Setenv("ADMOB_OAUTH2_REFRESH_TOKEN", "XXXXXXXXXX")
 	t.Setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX")
-	t.Setenv("TZ", "Asia/Tokyo")
+	t.Setenv("CRON", "cron(0 0,12 * * ? *)")
+	t.Setenv("TZ", "UTC")
 }
