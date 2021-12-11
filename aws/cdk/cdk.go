@@ -5,11 +5,14 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/aws/aws-cdk-go/awscdk"
-	"github.com/aws/aws-cdk-go/awscdk/awsevents"
-	"github.com/aws/aws-cdk-go/awscdk/awseventstargets"
-	"github.com/aws/aws-cdk-go/awscdk/awslambda"
-	"github.com/aws/constructs-go/constructs/v3"
+	"github.com/aws/aws-cdk-go/awscdk/v2"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awsevents"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awseventstargets"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awslambda"
+	"github.com/aws/aws-cdk-go/awscdk/v2/awss3assets"
+	"github.com/aws/aws-cdk-go/awscdkapigatewayv2alpha/v2"
+	"github.com/aws/aws-cdk-go/awscdkapigatewayv2integrationsalpha/v2"
+	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 	"github.com/joho/godotenv"
 )
@@ -39,7 +42,7 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	function := awslambda.NewFunction(stack, functionName, &awslambda.FunctionProps{
 		FunctionName: functionName,
 		Runtime:      awslambda.Runtime_GO_1_X(),
-		Code:         awslambda.Code_Asset(jsii.String("../lambda")),
+		Code:         awslambda.Code_FromAsset(jsii.String("../lambda"), &awss3assets.AssetOptions{}),
 		Architecture: awslambda.Architecture_X86_64(),
 		Handler:      jsii.String("main"),
 		Environment:  env,
@@ -50,6 +53,18 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	awsevents.NewRule(stack, jsii.String("admob-reporter-rule"), &awsevents.RuleProps{
 		Schedule: awsevents.Schedule_Expression((*env)["CRON"]),
 		Targets:  &targets,
+	})
+
+	integration := awscdkapigatewayv2integrationsalpha.NewHttpLambdaIntegration(jsii.String("admob-reporter-integration"), function, &awscdkapigatewayv2integrationsalpha.HttpLambdaIntegrationProps{})
+	httpApi := awscdkapigatewayv2alpha.NewHttpApi(stack, jsii.String("admob-reporter-api"), &awscdkapigatewayv2alpha.HttpApiProps{
+		ApiName: jsii.String("admob-reporter-api"),
+	})
+	httpApi.AddRoutes(&awscdkapigatewayv2alpha.AddRoutesOptions{
+		Integration: integration,
+		Path:        jsii.String("/post"),
+		Methods: &[]awscdkapigatewayv2alpha.HttpMethod{
+			awscdkapigatewayv2alpha.HttpMethod_POST,
+		},
 	})
 
 	return stack
